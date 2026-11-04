@@ -384,6 +384,19 @@ h1{font-size:22px}h2{font-size:19px}
 .filt{width:100%;text-align:left}.filt small{color:var(--tx2);display:block;margin-bottom:6px}
 .filt .chips{display:flex;flex-wrap:wrap;gap:6px}
 .lychip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;color:var(--c);border:1px solid var(--c);background:rgba(0,0,0,.35)}.lychip.sm{font-size:10px;padding:1px 6px}
+#hud .hud-mgr,#hud .hud-mgr *{pointer-events:auto}
+.hud-mgr{position:absolute;right:8px;top:64px;bottom:96px;width:min(380px,94vw);display:flex;flex-direction:column;gap:6px;padding:10px;background:rgba(14,9,44,.95);border:1px solid var(--line);border-radius:16px;font-family:"Be Vietnam Pro";font-size:12px;backdrop-filter:blur(8px);z-index:5}
+.hud-mgr.hidden{display:none}
+.mg-head{display:flex;justify-content:space-between;align-items:center;font-size:15px}.mg-head .x{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;border:0}
+.mg-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.mg-chips .chip{padding:3px 9px;font-size:11px}
+.mg-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:60px;-webkit-overflow-scrolling:touch}
+.mg-row{display:flex;gap:7px;align-items:center;padding:5px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line)}.mg-row.sel{border-color:#ffe27a;background:rgba(255,226,122,.1)}
+.mg-row img{width:38px;height:46px;object-fit:cover;object-position:top;border-radius:8px;border:2px solid var(--rc);cursor:pointer}
+.mg-i{flex:1;min-width:0}.mg-i b{display:block;font-size:13px}.mg-i small{display:block;color:var(--tx2);font-size:10.5px}.mg-i select,.mg-foot select{margin-top:2px;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--tx);font-size:11px}
+.mg-b{display:flex;flex-direction:column;gap:3px}.mg-b .btn{padding:3px 8px;font-size:11px;white-space:nowrap}
+.mg-foot{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line);padding-top:6px}.mg-foot small{color:var(--tx2)}
+@media (max-width:640px){.hud-mgr{top:auto;right:6px;left:6px;width:auto;bottom:92px;max-height:56vh}}
+@media (max-height:480px) and (orientation:landscape){.hud-mgr{top:48px;bottom:8px;width:320px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -4264,6 +4277,37 @@ h1{font-size:22px}h2{font-size:19px}
         g.strokeCircle(u.x, u.y, r);
         g.lineStyle(3, 0xffffff, 0.9);
         g.strokeCircle(u.x, u.y, 28);
+        const a = u.def.aoe;
+        if (a && !a.legacy && a.shape !== 'full') {
+          const tg = this.pickTargets(u, s.range, 1)[0];
+          const ang = tg ? Math.atan2(tg.y - u.y, tg.x - u.x) : 0;
+          const cx = tg ? tg.x : u.x + Math.min(r, 140);
+          const cy = tg ? tg.y : u.y;
+          g.fillStyle(0xff9a5a, 0.18);
+          g.lineStyle(2, 0xff9a5a, 0.9);
+          if (a.shape === 'circle') {
+            g.fillCircle(cx, cy, a.r);
+            g.strokeCircle(cx, cy, a.r);
+          } else if (a.shape === 'cone') {
+            const half = (a.ang * Math.PI) / 360;
+            g.slice(u.x, u.y - 10, a.len, ang - half, ang + half, false);
+            g.fillPath();
+            g.strokePath();
+          } else if (a.shape === 'line') {
+            g.save();
+            g.translateCanvas(u.x, u.y - 10);
+            g.rotateCanvas(ang);
+            g.fillRect(0, -a.w / 2, s.range + 40, a.w);
+            g.strokeRect(0, -a.w / 2, s.range + 40, a.w);
+            g.restore();
+          } else if (a.shape === 'cross') {
+            g.fillRect(cx - a.arm, cy - a.w / 2, a.arm * 2, a.w);
+            g.fillRect(cx - a.w / 2, cy - a.arm, a.w, a.arm * 2);
+          } else if (a.shape === 'ring') {
+            g.lineStyle(a.outer - a.inner, 0xff9a5a, 0.22);
+            g.strokeCircle(cx, cy, (a.outer + a.inner) / 2);
+          }
+        }
       }
     }
     layerOk(layer, x, y) {
@@ -4346,36 +4390,124 @@ h1{font-size:22px}h2{font-size:19px}
     upgradeCost(u) {
       return u.up >= MAX_UP ? 0 : Math.round(u.base.cost * UP_COST[u.up]);
     }
-    upgradeSelected() {
-      const u = this.selected;
-      if (!u || u.up >= MAX_UP) return;
+    upgradeUnit(u, quiet) {
+      if (!u || !u.alive || u.up >= MAX_UP) return false;
       const c = this.upgradeCost(u);
       if (this.state.yen < c) {
-        this.say('Không đủ Yên để nâng cấp', 'warn');
-        ATD.Audio.play('error');
-        return;
+        if (!quiet) {
+          this.say('Không đủ Yên để nâng cấp', 'warn');
+          ATD.Audio.play('error');
+        }
+        return false;
       }
       this.state.yen -= c;
       u.spent += c;
       u.up++;
-      this.ring(u.x, u.y, 0xffe27a, 1.4);
-      this.burst(u.x, u.y - 20, 0xffe27a, 16);
-      this.popText(u.x, u.y - 70, 'NÂNG CẤP ' + u.up, '#ffe27a', 20);
-      ATD.Audio.play('place');
+      if (!quiet) {
+        this.ring(u.x, u.y, 0xffe27a, 1.4);
+        this.burst(u.x, u.y - 20, 0xffe27a, 16);
+        this.popText(u.x, u.y - 70, 'NÂNG CẤP ' + u.up, '#ffe27a', 20);
+        ATD.Audio.play('place');
+      }
+      return true;
+    }
+    upgradeSelected() {
+      if (!this.upgradeUnit(this.selected)) return;
       this.computeBuffs();
       this.drawRange();
       this.pushHud(true);
     }
+    sellUnit(u, quiet) {
+      if (!u || !u.alive) return 0;
+      const v = Math.floor(u.spent * 0.7);
+      this.state.yen += v;
+      if (!quiet) {
+        this.popText(u.x, u.y - 60, '+' + v, '#ffd75e', 20);
+        this.burst(u.x, u.y - 20, 0xffffff, 10);
+      }
+      if (this.selected === u) this.selected = null;
+      this.removeUnit(u);
+      return v;
+    }
     sellSelected() {
       const u = this.selected;
       if (!u) return;
-      const v = Math.floor(u.spent * 0.7);
-      this.state.yen += v;
-      this.popText(u.x, u.y - 60, '+' + v, '#ffd75e', 20);
-      this.burst(u.x, u.y - 20, 0xffffff, 10);
-      this.removeUnit(u);
+      this.sellUnit(u);
       this.select(null);
       ATD.Audio.play('coin');
+    }
+    mgrList() {
+      return this.units.map((u) => ({
+        id: u.id,
+        did: u.def.id,
+        name: u.def.name,
+        rarity: u.def.rarity,
+        kind: u.def.kind,
+        layer: u.layer || 'hybrid',
+        el: u.el,
+        level: u.inst.level,
+        up: u.up,
+        maxUp: MAX_UP,
+        upCost: u.up >= MAX_UP ? 0 : this.upgradeCost(u),
+        sell: Math.floor(u.spent * 0.7),
+        mode: u.mode,
+        kills: u.kills,
+        damage: Math.floor(u.damage),
+        sel: this.selected === u,
+        canMode: u.base.kind !== 'econ' && !(u.base.kind === 'support' && !u.def.dmg)
+      }));
+    }
+    mgrAct(act, ids, arg) {
+      const list = this.units.filter((u) => ids.includes(u.id));
+      if (act === 'up') {
+        list.sort((a, b) => this.upgradeCost(a) - this.upgradeCost(b));
+        let n = 0;
+        for (const u of list) {
+          let guard = 0;
+          while (u.up < MAX_UP && guard++ < 1 && this.upgradeUnit(u, true)) n++;
+        }
+        if (n) {
+          ATD.Audio.play('place');
+          this.say('Đã nâng cấp ' + n + ' lần', 'info');
+        } else {
+          this.say('Không đủ Yên hoặc đã đạt tối đa', 'warn');
+          ATD.Audio.play('error');
+        }
+      } else if (act === 'upmax') {
+        let n = 0;
+        list.sort((a, b) => this.upgradeCost(a) - this.upgradeCost(b));
+        let go = true;
+        while (go) {
+          go = false;
+          for (const u of list) if (u.up < MAX_UP && this.upgradeUnit(u, true)) {
+            n++;
+            go = true;
+          }
+        }
+        if (n) {
+          ATD.Audio.play('place');
+          this.say('Đã nâng cấp ' + n + ' lần', 'info');
+        } else {
+          this.say('Không đủ Yên hoặc đã đạt tối đa', 'warn');
+          ATD.Audio.play('error');
+        }
+      } else if (act === 'sell') {
+        let v = 0;
+        list.forEach((u) => (v += this.sellUnit(u, true)));
+        if (v) {
+          ATD.Audio.play('coin');
+          this.say('Đã bán, nhận ' + v + ' Yên', 'info');
+        }
+      } else if (act === 'mode') {
+        list.forEach((u) => (u.mode = arg));
+      } else if (act === 'focus' && list[0]) {
+        this.select(list[0]);
+        this.cameras.main.pan(list[0].x, list[0].y, 300, 'Sine.easeInOut');
+        return;
+      }
+      this.computeBuffs();
+      this.drawRange();
+      this.pushHud(true);
     }
     removeUnit(u) {
       u.alive = false;
@@ -4795,7 +4927,9 @@ h1{font-size:22px}h2{font-size:19px}
       const dx = Math.cos(ang),
         dy = Math.sin(ang);
       const range = s.range;
-      const g = this.add.graphics().setDepth(55000).setBlendMode(Phaser.BlendModes.ADD);
+      this.aoeLive = this.aoeLive || 0;
+      const fx = this.particlesOn && this.aoeLive < 4;
+      const g = fx ? this.add.graphics().setDepth(55000) : this.add.graphics().setVisible(false);
       const rg = (alpha) => {
         g.fillStyle(col, alpha);
         g.lineStyle(3, col, 0.9);
@@ -4854,17 +4988,20 @@ h1{font-size:22px}h2{font-size:19px}
           return d >= a.inner - e.size * 0.2 && d <= a.outer + e.size * 0.2;
         };
       } else {
-        this.ring(u.x, u.y, col, 9);
-        this.ring(u.x, u.y, 0xffffff, 5);
+        if (fx) this.ring(u.x, u.y, col, 4);
         test = () => true;
       }
-      this.tweens.add({ targets: g, alpha: 0, duration: 380, onComplete: () => g.destroy() });
+      if (fx) {
+        this.aoeLive++;
+        this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => { g.destroy(); this.aoeLive--; } });
+      } else g.destroy();
       const done = targets;
       const dm = s.dmg * a.mult;
+      let n = 0;
       for (const e of this.enemies.slice()) {
         if (!e.alive || done.includes(e) || !ATD.Layers.canHit(u.base.layer, e.fly) || !test(e)) continue;
         this.damage(e, dm, u, { noCrit: true, color: '#' + col.toString(16).padStart(6, '0') });
-        if (a.shape === 'full') this.burst(e.x, e.y - 20, col, 3);
+        if (a.shape === 'full' && fx && (n = (n || 0) + 1) <= 8) this.burst(e.x, e.y - 20, col, 2);
       }
     }
     passiveBurst(u, s, t0, ps) {
@@ -5227,6 +5364,8 @@ h1{font-size:22px}h2{font-size:19px}
         supportDmg: b.buff ? b.buff.dmg : 0,
         supportType: b.buff ? b.buff.type : null,
         el: u.el,
+        layer: u.layer || 'hybrid',
+        aoe: u.def.aoe ? u.def.aoe.shape : null,
         dtype: u.dtype,
         passive: b.passive ? { name: b.passive.name, desc: b.passive.desc } : null,
         waveGold: b.waveGold ? Math.floor(b.waveGold.flat * (1 + 0.2 * u.up)) : 0,
@@ -5280,6 +5419,8 @@ h1{font-size:22px}h2{font-size:19px}
         sell: () => this.sellSelected(),
         setTarget: (m) => this.setTarget(m),
         deselect: () => this.select(null),
+        mgrList: () => this.mgrList(),
+        mgrAct: (a, ids, arg) => this.mgrAct(a, ids, arg),
         surrender: () => this.finish(false, true),
         zoom: (f) => this.setZoom(this.cameras.main.zoom * f)
       };
@@ -5569,6 +5710,7 @@ h1{font-size:22px}h2{font-size:19px}
         <div class="hud-grp hud-right">
           <div class="seg"><button data-sp="1">1x</button><button data-sp="2">2x</button><button data-sp="3">3x</button></div>
           <button class="hbtn tgl" data-h="auto" title="Tự động bắt đầu wave">Auto</button>
+          <button class="hbtn" data-h="mgr" title="Quản lý unit">Unit</button>
           <button class="hbtn" data-h="zout" title="Thu nhỏ">−</button>
           <button class="hbtn" data-h="zin" title="Phóng to">+</button>${ATD.Device.coarse ? '<button class="hbtn" data-h="full" title="Toàn màn hình">⛶</button>' : ''}
         </div>
@@ -5581,7 +5723,8 @@ h1{font-size:22px}h2{font-size:19px}
       <div class="hud-hint hidden"></div>
       <div class="hud-bottom">${scene.slots.map((s, i) => `<div class="slot r-${ATD.UNIT_DEFS[s.def.id].rarity}" data-slot="${i}"><img src="${ATD.Art.unitURL(s.def.id, true)}" draggable="false"><span class="s-key">${i + 1}</span><span class="s-el">${ATD.Elements.icon(s.def.el, 14)}</span><span class="s-cnt" data-v="cnt"></span><span class="s-cost">${I('gold', 13)}<b>${U.fmt(s.stats.cost)}</b></span><span class="s-name">${U.esc(s.def.name)}</span></div>`).join('')}</div>
       <div class="hud-rotate hidden"><b>Xoay ngang điện thoại để chơi tốt hơn</b><div><button class="btn ok" data-h="full">Toàn màn hình</button><button class="btn" data-h="rotx">Đóng</button></div></div>
-      <div class="hud-modal hidden"></div>`;
+      <div class="hud-modal hidden"></div>
+      <div class="hud-mgr hidden"></div>`;
       root.querySelectorAll('[data-slot]').forEach((el) => {
         el.addEventListener('pointerdown', (e) => {
           e.preventDefault();
@@ -5598,6 +5741,8 @@ h1{font-size:22px}h2{font-size:19px}
       this.selKey = '';
     },
     unmount() {
+      clearInterval(this.mgrT);
+      this.mgrOpen = false;
       if (this.el) this.el.innerHTML = '';
       this.scene = null;
     },
@@ -5616,6 +5761,8 @@ h1{font-size:22px}h2{font-size:19px}
       switch (h) {
         case 'pause':
           return this.pauseMenu();
+        case 'mgr':
+          return this.mgrToggle();
         case 'auto':
           return api.toggleAuto();
         case 'zin':
@@ -5681,6 +5828,111 @@ h1{font-size:22px}h2{font-size:19px}
       });
       this.renderSel(s.selected);
     },
+    mgrToggle(force) {
+      const box = this.q('.hud-mgr');
+      this.mgrOpen = force === undefined ? !this.mgrOpen : force;
+      clearInterval(this.mgrT);
+      box.classList.toggle('hidden', !this.mgrOpen);
+      if (!this.mgrOpen) return;
+      this.mf = this.mf || { layer: 'all', sort: 'damage', pick: new Set() };
+      box.onclick = (e) => this.mgrClick(e);
+      box.onchange = (e) => {
+        if (e.target.dataset.pick) {
+          const id = +e.target.dataset.pick;
+          e.target.checked ? this.mf.pick.add(id) : this.mf.pick.delete(id);
+          this.mgrRender(true);
+        }
+        if (e.target.dataset.mm) {
+          const api = ATD.Battle.api;
+          api.mgrAct('mode', [+e.target.dataset.mm], e.target.value);
+        }
+        if (e.target.dataset.mall) {
+          if (!e.target.value) return;
+          const ids = this.mgrTargets();
+          ATD.Battle.api.mgrAct('mode', ids, e.target.value);
+          e.target.value = '';
+        }
+      };
+      this.mgrRender();
+      this.mgrT = setInterval(() => this.mgrRender(), 900);
+    },
+    mgrTargets() {
+      const all = ATD.Battle.api.mgrList().filter((x) => this.mgrFilter(x));
+      const sel = all.filter((x) => this.mf.pick.has(x.id)).map((x) => x.id);
+      return sel.length ? sel : all.map((x) => x.id);
+    },
+    mgrFilter(x) {
+      const f = this.mf.layer;
+      if (f === 'all') return true;
+      if (f === 'support') return x.kind === 'support' || x.kind === 'econ';
+      return x.layer === f && x.kind !== 'support' && x.kind !== 'econ';
+    },
+    mgrClick(e) {
+      const api = ATD.Battle.api;
+      const t = e.target.closest('[data-m]');
+      if (!t || !api) return;
+      ATD.Audio.play('click');
+      const m = t.dataset.m;
+      const id = +t.dataset.id;
+      if (m === 'close') return this.mgrToggle(false);
+      if (m === 'layer') {
+        this.mf.layer = t.dataset.v;
+        return this.mgrRender(true);
+      }
+      if (m === 'sort') {
+        this.mf.sort = t.dataset.v;
+        return this.mgrRender(true);
+      }
+      if (m === 'allsel') {
+        const ids = api.mgrList().filter((x) => this.mgrFilter(x)).map((x) => x.id);
+        const every = ids.every((i) => this.mf.pick.has(i));
+        ids.forEach((i) => (every ? this.mf.pick.delete(i) : this.mf.pick.add(i)));
+        return this.mgrRender(true);
+      }
+      if (m === 'focus') return api.mgrAct('focus', [id]);
+      if (m === 'up' || m === 'sell') {
+        if (m === 'sell') this.mf.pick.delete(id);
+        return api.mgrAct(m, [id]);
+      }
+      if (m === 'bup' || m === 'bmax' || m === 'bsell') {
+        const ids = this.mgrTargets();
+        if (m === 'bsell') {
+          if (!this.mf.pick.size) return this.scene.say('Hãy chọn unit cần bán', 'warn');
+          this.mf.pick.clear();
+        }
+        return api.mgrAct(m === 'bup' ? 'up' : m === 'bmax' ? 'upmax' : 'sell', ids);
+      }
+    },
+    mgrRender(force) {
+      if (!this.mgrOpen || !ATD.Battle.api) return;
+      const box = this.q('.hud-mgr');
+      const f = this.mf;
+      const all = ATD.Battle.api.mgrList();
+      const ids = new Set(all.map((x) => x.id));
+      [...f.pick].forEach((i) => !ids.has(i) && f.pick.delete(i));
+      let list = all.filter((x) => this.mgrFilter(x));
+      const srt = { damage: (a, b) => b.damage - a.damage, kills: (a, b) => b.kills - a.kills, level: (a, b) => b.up - a.up, rarity: (a, b) => ATD.RARITY_ORDER.indexOf(b.rarity) - ATD.RARITY_ORDER.indexOf(a.rarity) }[f.sort];
+      list.sort(srt);
+      const modes = ATD.Battle.api.scene.constructor.MODES || [['first', 'Đầu'], ['last', 'Cuối'], ['strongest', 'Mạnh nhất'], ['weakest', 'Yếu nhất'], ['boss', 'Boss']];
+      const sig = JSON.stringify([f.layer, f.sort, [...f.pick], list.map((x) => [x.id, x.up, x.mode, x.sel, x.kills, x.upCost, x.sell])]);
+      if (!force && sig === this.mgrSig) return;
+      this.mgrSig = sig;
+      const sc = box.querySelector('.mg-list');
+      const top = sc ? sc.scrollTop : 0;
+      const sumSell = list.reduce((a, x) => a + x.sell, 0);
+      const chip = (k, v, l) => `<button class="chip ${f[k] === v ? 'on' : ''}" data-m="${k}" data-v="${v}">${l}</button>`;
+      box.innerHTML = `<div class="mg-head"><b>Quản Lý Unit <small>(${list.length}/${all.length})</small></b><button class="x" data-m="close">✕</button></div>
+      <div class="mg-chips">${chip('layer', 'all', 'Tất cả')}${chip('layer', 'ground', 'Mặt Đất')}${chip('layer', 'air', 'Không Trung')}${chip('layer', 'hybrid', 'Lai')}${chip('layer', 'support', 'Hỗ trợ')}</div>
+      <div class="mg-chips">${chip('sort', 'damage', 'Sát thương')}${chip('sort', 'kills', 'Hạ gục')}${chip('sort', 'level', 'Nâng cấp')}${chip('sort', 'rarity', 'Độ hiếm')}</div>
+      <div class="mg-list">${list.map((x) => {
+        const un = ATD.UNIT_DEFS[x.did];
+        return `<div class="mg-row r-${x.rarity} ${x.sel ? 'sel' : ''}"><input type="checkbox" data-pick="${x.id}" ${f.pick.has(x.id) ? 'checked' : ''}><img src="${ATD.Art.unitURL(x.did, true)}" data-m="focus" data-id="${x.id}"><div class="mg-i"><b>${U.esc(x.name)}</b><small>${ATD.Layers.defs[x.layer].name} · ${x.up}/${x.maxUp} · ${U.fmt(x.damage)} dmg · ${x.kills} hạ</small>${x.canMode ? `<select data-mm="${x.id}">${modes.map((m) => `<option value="${m[0]}" ${x.mode === m[0] ? 'selected' : ''}>${m[1]}</option>`).join('')}</select>` : ''}</div><div class="mg-b"><button class="btn sm ok" data-m="up" data-id="${x.id}" ${x.up >= x.maxUp ? 'disabled' : ''}>${x.up >= x.maxUp ? 'Tối đa' : '↑ ' + U.fmt(x.upCost)}</button><button class="btn sm" data-m="sell" data-id="${x.id}">Bán ${U.fmt(x.sell)}</button></div></div>`;
+      }).join('') || '<p class="empty">Chưa có unit trên sân</p>'}</div>
+      <div class="mg-foot"><div class="mg-chips"><button class="chip" data-m="allsel">Chọn tất cả</button><select data-mall="1"><option value="">Đổi mục tiêu ${f.pick.size ? '(đã chọn)' : '(tất cả)'}...</option>${modes.map((m) => `<option value="${m[0]}">${m[1]}</option>`).join('')}</select></div>
+      <div class="mg-chips"><button class="btn sm ok" data-m="bup">Nâng cấp ${f.pick.size ? 'đã chọn' : 'tất cả'}</button><button class="btn sm ok" data-m="bmax">Nâng tối đa</button><button class="btn sm" data-m="bsell">Bán đã chọn</button></div><small>Giá trị bán: ${U.fmt(sumSell)} Yên</small></div>`;
+      const nl = box.querySelector('.mg-list');
+      if (nl) nl.scrollTop = top;
+    },
     renderSel(sel) {
       const box = this.q('.hud-sel');
       if (!sel) {
@@ -5695,7 +5947,7 @@ h1{font-size:22px}h2{font-size:19px}
         this.selKey = key + uid;
         const tr = sel.trait ? ATD.Traits.byId[sel.trait] : null;
         box.classList.remove('hidden');
-        box.innerHTML = `<div class="sel-head r-${sel.rarity}"><img src="${ATD.Art.unitURL(sel.id, true)}"><div><b>${U.esc(sel.name)}</b><small>${U.esc(sel.title)}</small><small>${KIND[sel.kind]} · Lv ${sel.level}${sel.evo ? ' · ' + '★'.repeat(sel.evo) : ''}</small><span class="sel-tags">${ATD.Elements.chip(sel.el, true)}${ATD.Elements.dtChip(sel.dtype, true)}${ATD.Layers.chip(sel.layer, true)}${ATD.Aoe.chip(sel.def || ATD.UNIT_DEFS[sel.id])}</span>${tr ? `<span class="tchip" style="--c:${tr.color}">${ATD.Art.traitIcon(tr, 14)}${U.esc(tr.name)}</span>` : ''}</div><button class="x" data-h="close">${I('close', 14)}</button></div>
+        box.innerHTML = `<div class="sel-head r-${sel.rarity}"><img src="${ATD.Art.unitURL(sel.id, true)}"><div><b>${U.esc(sel.name)}</b><small>${U.esc(sel.title)}</small><small>${KIND[sel.kind]} · Lv ${sel.level}${sel.evo ? ' · ' + '★'.repeat(sel.evo) : ''}</small><span class="sel-tags">${ATD.Elements.chip(sel.el, true)}${ATD.Elements.dtChip(sel.dtype, true)}${ATD.Layers.chip(sel.layer || 'hybrid', true)}${ATD.Aoe.chip(sel.def || ATD.UNIT_DEFS[sel.id])}</span>${tr ? `<span class="tchip" style="--c:${tr.color}">${ATD.Art.traitIcon(tr, 14)}${U.esc(tr.name)}</span>` : ''}</div><button class="x" data-h="close">${I('close', 14)}</button></div>
         <div class="sel-stats"></div>
         ${sel.passive ? `<div class="sel-pass"><b>${U.esc(sel.passive.name)}</b><small>${U.esc(sel.passive.desc)}</small></div>` : ''}
         <div class="sel-modes"></div>
