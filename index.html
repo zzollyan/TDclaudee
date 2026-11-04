@@ -1522,7 +1522,7 @@ h1{font-size:22px}h2{font-size:19px}
     unitURL(id, bg, evo) {
       const k = 'u:' + id + ':' + (bg ? 1 : 0) + ':' + (evo ? 1 : 0);
       if (urlCache[k]) return urlCache[k];
-      return blobUrl(k, unitSVG(ATD.UNIT_DEFS[id], { bg, evo }));
+      return blobUrl(k, A.unitSVG(ATD.UNIT_DEFS[id], { bg, evo }));
     },
     enemyURL(type, pal) {
       const k = 'e:' + type + pal.m;
@@ -1549,6 +1549,298 @@ h1{font-size:22px}h2{font-size:19px}
     }
   };
   ATD.Art = A;
+})();
+</script>
+<script>(function () {
+  const ATD = window.ATD;
+  const A = ATD.Art;
+  const h2n = (c) => {
+    c = c.replace('#', '');
+    if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+    return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)];
+  };
+  const n2h = (r) => '#' + r.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => {
+    const x = h2n(a),
+      y = h2n(b);
+    return n2h(x.map((v, i) => v * (1 - t) + y[i] * t));
+  };
+  const lite = (c, t) => mix(c, '#ffffff', t);
+  const dark = (c, t) => mix(c, '#000000', t);
+  const SKIRT = ['long', 'twin', 'pony', 'bun', 'bob'];
+
+  function hair(st, h, h2) {
+    const f = `fill="url(#hg)" stroke="${dark(h2, 0.5)}" stroke-width=".7" stroke-linejoin="round"`;
+    const fringe = `<path ${f} d="M65 31 Q62 9 80 8 Q98 9 95 31 Q93 21 87 19 Q86 26 81 19 Q79 27 74 19 Q68 21 65 31Z"/>`;
+    let back = '',
+      front = fringe,
+      hi = '';
+    switch (st) {
+      case 'spiky':
+        back = `<path ${f} d="M63 32 L58 18 L66 20 L62 4 L72 12 L76 -2 L82 10 L90 0 L90 12 L100 6 L98 20 L104 18 L97 32 L92 44 L68 44Z"/>`;
+        front = `<path ${f} d="M65 33 L62 18 L70 20 L68 8 L77 14 L82 6 L86 15 L94 9 L93 20 L99 18 L95 33 L91 22 L88 31 L84 21 L80 31 L76 21 L72 31 L69 22Z"/><path ${f} d="M65 30 Q62 40 66 48 Q68 38 69 30Z"/><path ${f} d="M95 30 Q98 40 94 48 Q92 38 91 30Z"/>`;
+        break;
+      case 'wild':
+        back = `<path ${f} d="M62 34 L50 28 L58 24 L46 12 L62 16 L58 2 L72 12 L80 -2 L88 12 L102 2 L100 16 L116 12 L104 24 L112 28 L98 34 L96 46 L64 46Z"/>`;
+        front = `<path ${f} d="M65 33 L61 16 L70 20 L66 6 L77 14 L82 5 L87 15 L96 6 L94 20 L101 16 L95 33 L91 23 L87 33 L83 21 L79 32 L75 21 L71 33 L68 24Z"/><path ${f} d="M65 30 Q60 42 64 52 Q68 40 69 30Z"/><path ${f} d="M95 30 Q100 42 96 52 Q92 40 91 30Z"/>`;
+        break;
+      case 'long':
+        back = `<path ${f} d="M63 30 Q60 6 80 6 Q100 6 97 30 L103 72 Q106 116 92 130 Q88 100 90 62 L70 62 Q72 100 68 130 Q54 116 57 72Z"/>`;
+        front = `${fringe}<path ${f} d="M65 30 Q58 54 61 80 Q68 64 69 40Z"/><path ${f} d="M95 30 Q102 54 99 80 Q92 64 91 40Z"/>`;
+        hi = `<path d="M62 70 Q60 96 66 118 M98 70 Q100 96 94 118" stroke="${lite(h, 0.45)}" stroke-width="1.4" fill="none" opacity=".55" stroke-linecap="round"/>`;
+        break;
+      case 'twin':
+        back = `<path ${f} d="M64 32 Q62 8 80 7 Q98 8 96 32 L96 46 L64 46Z"/><path ${f} d="M64 20 Q42 24 40 62 Q38 100 48 118 Q56 94 62 64 Q64 44 67 34Z"/><path ${f} d="M96 20 Q118 24 120 62 Q122 100 112 118 Q104 94 98 64 Q96 44 93 34Z"/>`;
+        hi = `<path d="M44 60 Q42 90 48 110 M116 60 Q118 90 112 110" stroke="${lite(h, 0.45)}" stroke-width="1.4" fill="none" opacity=".55" stroke-linecap="round"/>`;
+        break;
+      case 'bob':
+        back = `<path ${f} d="M62 32 Q60 7 80 6 Q100 7 98 32 L101 58 Q92 63 88 52 L72 52 Q68 63 59 58Z"/>`;
+        front = `${fringe}<path ${f} d="M65 30 Q60 46 62 58 Q69 52 69 38Z"/><path ${f} d="M95 30 Q100 46 98 58 Q91 52 91 38Z"/>`;
+        break;
+      case 'pony':
+        back = `<path ${f} d="M64 32 Q62 8 80 7 Q98 8 96 32 L96 46 L64 46Z"/><path ${f} d="M92 12 Q120 4 124 40 Q128 84 108 104 Q110 70 98 46Z"/>`;
+        hi = `<path d="M112 22 Q120 50 114 84" stroke="${lite(h, 0.5)}" stroke-width="1.5" fill="none" opacity=".6" stroke-linecap="round"/>`;
+        break;
+      case 'bun':
+        back = `<circle ${f} cx="80" cy="7" r="11"/><path ${f} d="M64 32 Q62 8 80 7 Q98 8 96 32 L96 46 L64 46Z"/>`;
+        hi = `<path d="M74 4 Q80 0 86 4" stroke="${lite(h, 0.55)}" stroke-width="1.5" fill="none" opacity=".7" stroke-linecap="round"/>`;
+        break;
+    }
+    const sheen = `<path d="M69 19 Q80 11 91 19" stroke="${lite(h, 0.6)}" stroke-width="2.2" fill="none" opacity=".6" stroke-linecap="round"/><path d="M72 15 Q80 11 88 15" stroke="#fff" stroke-width="1" fill="none" opacity=".5" stroke-linecap="round"/>`;
+    const strands = `<path d="M74 21 Q73 15 76 10 M82 20 Q83 14 81 9 M88 21 Q90 16 88 11" stroke="${dark(h2, 0.25)}" stroke-width=".7" fill="none" opacity=".6"/>`;
+    return { back: back + hi, front: front + sheen + strands };
+  }
+
+  function acc(k, a) {
+    const gold = 'url(#gold)';
+    switch (k) {
+      case 'headband':
+        return `<path d="M64 23 Q80 14 96 23 L96 27 Q80 18 64 27Z" fill="${a.tr}" stroke="${dark(a.tr, 0.55)}" stroke-width=".7"/><path d="M95 24 Q108 30 106 46 Q101 36 94 28Z" fill="${a.tr}" stroke="${dark(a.tr, 0.55)}" stroke-width=".6"/><circle cx="80" cy="19" r="2.6" fill="#fff" stroke="${dark(a.tr, 0.5)}" stroke-width=".6"/><circle cx="79.4" cy="18.4" r=".8" fill="${a.au}"/>`;
+      case 'ribbon':
+        return `<g stroke="${dark(a.tr, 0.55)}" stroke-width=".7" fill="${a.tr}"><path d="M92 14 L106 6 L105 22Z"/><path d="M92 14 L80 6 L81 22Z"/><circle cx="92" cy="14" r="3.4"/></g><path d="M92 14 L104 8" stroke="#fff" stroke-width=".6" opacity=".5"/>`;
+      case 'horns':
+        return `<path d="M68 16 Q58 6 54 -2 Q70 0 74 14Z" fill="url(#ivory)" stroke="#6b5a3a" stroke-width=".7"/><path d="M92 16 Q102 6 106 -2 Q90 0 86 14Z" fill="url(#ivory)" stroke="#6b5a3a" stroke-width=".7"/>`;
+      case 'halo':
+        return `<ellipse cx="80" cy="3.5" rx="17" ry="4.5" fill="none" stroke="#ffe27a" stroke-width="3" filter="url(#glow)"/><ellipse cx="80" cy="3.5" rx="17" ry="4.5" fill="none" stroke="#fff8d8" stroke-width="1.1"/>`;
+      case 'foxears':
+        return `<path d="M66 18 L58 -4 L78 10Z" fill="${a.h}" stroke="${dark(a.h2, 0.5)}" stroke-width=".7"/><path d="M94 18 L102 -4 L82 10Z" fill="${a.h}" stroke="${dark(a.h2, 0.5)}" stroke-width=".7"/><path d="M66 14 L61 2 L73 10Z" fill="${a.tr}"/><path d="M94 14 L99 2 L87 10Z" fill="${a.tr}"/>`;
+      case 'catears':
+        return `<path d="M66 18 L63 0 L79 11Z" fill="${a.h}" stroke="${dark(a.h2, 0.5)}" stroke-width=".7"/><path d="M94 18 L97 0 L81 11Z" fill="${a.h}" stroke="${dark(a.h2, 0.5)}" stroke-width=".7"/><path d="M67 14 L66 5 L74 11Z" fill="#fda4af"/><path d="M93 14 L94 5 L86 11Z" fill="#fda4af"/>`;
+      case 'crown':
+        return `<path d="M64 15 L65 2 L72 9 L80 -1 L88 9 L95 2 L96 15Z" fill="${gold}" stroke="#7a5200" stroke-width=".8"/><circle cx="80" cy="8" r="2" fill="#ef4444" stroke="#7a1d1d" stroke-width=".5"/><circle cx="72" cy="11" r="1.2" fill="#60a5fa"/><circle cx="88" cy="11" r="1.2" fill="#60a5fa"/>`;
+      case 'hat':
+        return `<path d="M54 15 Q80 6 106 15 Q80 24 54 15Z" fill="${a.t}" stroke="${dark(a.t, 0.55)}" stroke-width=".8"/><path d="M64 13 Q70 -6 90 -14 Q84 2 96 13Z" fill="url(#cl)" stroke="${dark(a.t, 0.55)}" stroke-width=".8"/><path d="M64 12 Q80 18 96 12 L96 15 Q80 21 64 15Z" fill="${a.tr}"/>`;
+      case 'goggles':
+        return `<path d="M64 21 Q80 14 96 21 L96 25 Q80 18 64 25Z" fill="#334155" stroke="#0f172a" stroke-width=".7"/><circle cx="72" cy="17" r="5.2" fill="#1e293b" stroke="#94a3b8" stroke-width="1"/><circle cx="88" cy="17" r="5.2" fill="#1e293b" stroke="#94a3b8" stroke-width="1"/><circle cx="72" cy="17" r="3.6" fill="${a.tr}" opacity=".85"/><circle cx="88" cy="17" r="3.6" fill="${a.tr}" opacity=".85"/><circle cx="70.8" cy="15.8" r="1.1" fill="#fff" opacity=".9"/><circle cx="86.8" cy="15.8" r="1.1" fill="#fff" opacity=".9"/>`;
+      case 'flower':
+        return `<g stroke="#9d7f90" stroke-width=".5">${[0, 72, 144, 216, 288].map((r) => `<ellipse cx="94" cy="15" rx="2.6" ry="4.2" fill="#fff" transform="rotate(${r} 94 19) translate(0 -3)"/>`).join('')}<circle cx="94" cy="19" r="2.2" fill="#fbbf24"/></g>`;
+      case 'hood':
+        return `<path d="M60 36 Q56 4 80 3 Q104 4 100 36 L98 52 Q80 42 62 52Z" fill="url(#cl)" stroke="${dark(a.t, 0.55)}" stroke-width=".8" opacity=".0"/>`;
+    }
+    return '';
+  }
+
+  function weapon(k, a) {
+    const M = 'url(#metal)';
+    const ol = '#1b1530';
+    const glow = `<g filter="url(#glow)" opacity=".7">`;
+    switch (k) {
+      case 'sword':
+        return `${glow}<path d="M-3 -8 L-3 -60 L0 -72 L3 -60 L3 -8Z" fill="${a.au}"/></g><path d="M-3.4 -8 L-3.4 -60 L0 -73 L3.4 -60 L3.4 -8Z" fill="${M}" stroke="${ol}" stroke-width=".8"/><path d="M0 -10 L0 -68" stroke="#fff" stroke-width=".8" opacity=".8"/><path d="M-9 -9 Q0 -14 9 -9 L7 -5.5 Q0 -9 -7 -5.5Z" fill="url(#gold)" stroke="#6b4a00" stroke-width=".7"/><rect x="-1.8" y="-6" width="3.6" height="13" fill="${dark(a.tr, 0.3)}" stroke="${ol}" stroke-width=".6"/><circle cx="0" cy="8" r="2.4" fill="url(#gold)" stroke="#6b4a00" stroke-width=".6"/>`;
+      case 'katana':
+        return `${glow}<path d="M-2.4 -8 Q-5 -44 3.5 -84 Q5 -44 2.4 -8Z" fill="${a.au}"/></g><path d="M-2.4 -8 Q-5 -44 3.5 -84 Q5 -44 2.4 -8Z" fill="${M}" stroke="${ol}" stroke-width=".8"/><path d="M-1 -12 Q-3 -44 3 -80" stroke="#fff" stroke-width=".7" fill="none" opacity=".8"/><ellipse cx="0" cy="-8" rx="6" ry="2.2" fill="#1f2937" stroke="url(#gold)" stroke-width=".8"/><rect x="-2" y="-6" width="4" height="15" rx="1" fill="${a.tr}" stroke="${ol}" stroke-width=".6"/><path d="M-2 -3 L2 -1 M-2 1 L2 3 M-2 5 L2 7" stroke="${ol}" stroke-width=".5"/>`;
+      case 'bow':
+        return `<path d="M2 -58 Q38 -30 2 2" stroke="${ol}" stroke-width="5.4" fill="none" stroke-linecap="round"/><path d="M2 -58 Q38 -30 2 2" stroke="url(#wood)" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M2 -58 L2 2" stroke="#fff" stroke-width=".6" opacity=".8"/><g filter="url(#glow)"><path d="M2 -28 L-22 -28" stroke="${a.au}" stroke-width="2"/></g><path d="M2 -28 L-24 -28" stroke="#fff" stroke-width=".9"/><path d="M-24 -28 L-18 -31 L-18 -25Z" fill="${a.au}"/>`;
+      case 'staff':
+        return `<rect x="-2" y="-84" width="4" height="108" rx="2" fill="url(#wood)" stroke="${ol}" stroke-width=".7"/><path d="M-6 -78 Q0 -90 6 -78 Q0 -72 -6 -78Z" fill="url(#gold)" stroke="#6b4a00" stroke-width=".6"/>${glow}<circle cx="0" cy="-88" r="9" fill="${a.au}"/></g><circle cx="0" cy="-88" r="7" fill="url(#orbg)" stroke="${dark(a.au, 0.5)}" stroke-width=".7"/><circle cx="-2.4" cy="-91" r="2" fill="#fff" opacity=".85"/><ellipse cx="0" cy="-88" rx="11" ry="3.2" fill="none" stroke="${a.au}" stroke-width=".8" opacity=".7" transform="rotate(-20 0 -88)"/>`;
+      case 'wand':
+        return `<rect x="-1.4" y="-50" width="2.8" height="58" rx="1.4" fill="#f5efe6" stroke="${ol}" stroke-width=".6"/><rect x="-3" y="-4" width="6" height="3" rx="1" fill="url(#gold)"/>${glow}<path d="M0 -72 L4 -58 L18 -58 L7 -50 L11 -36 L0 -44 L-11 -36 L-7 -50 L-18 -58 L-4 -58Z" fill="${a.au}"/></g><path d="M0 -70 L3.6 -58 L16 -58 L6.4 -50.6 L10 -38 L0 -45 L-10 -38 L-6.4 -50.6 L-16 -58 L-3.6 -58Z" fill="url(#orbg)" stroke="${dark(a.au, 0.5)}" stroke-width=".6"/><circle cx="-2" cy="-60" r="1.6" fill="#fff" opacity=".85"/>`;
+      case 'fists':
+        return '';
+      case 'cannon':
+        return `<rect x="-11" y="-46" width="22" height="58" rx="8" fill="url(#metal)" stroke="${ol}" stroke-width=".9"/><rect x="-14" y="-54" width="28" height="12" rx="4" fill="#475569" stroke="${ol}" stroke-width=".9"/><rect x="-11" y="-30" width="22" height="3" fill="${a.au}" opacity=".8"/><rect x="-11" y="-14" width="22" height="3" fill="${a.au}" opacity=".8"/>${glow}<circle cx="0" cy="-57" r="7" fill="${a.au}"/></g><circle cx="0" cy="-56" r="4.4" fill="#fff" opacity=".85"/>`;
+      case 'fan':
+        return `<path d="M0 4 L-36 -42 Q0 -68 36 -42Z" fill="url(#fanc)" stroke="${ol}" stroke-width=".9"/><path d="M0 4 L-27 -52 M0 4 L-14 -58 M0 4 L0 -60 M0 4 L14 -58 M0 4 L27 -52" stroke="url(#gold)" stroke-width=".8"/><path d="M-36 -42 Q0 -68 36 -42" stroke="url(#gold)" stroke-width="2" fill="none"/>`;
+      case 'scythe':
+        return `<rect x="-2" y="-90" width="4" height="116" rx="2" fill="#3f3a36" stroke="${ol}" stroke-width=".7"/>${glow}<path d="M0 -90 Q56 -96 58 -54 Q40 -78 0 -78Z" fill="${a.au}"/></g><path d="M0 -90 Q56 -96 58 -54 Q40 -78 0 -78Z" fill="${M}" stroke="${ol}" stroke-width=".9"/><path d="M4 -86 Q44 -90 54 -62" stroke="#fff" stroke-width=".8" fill="none" opacity=".8"/>`;
+      case 'spear':
+        return `<rect x="-2" y="-80" width="4" height="106" rx="2" fill="url(#wood)" stroke="${ol}" stroke-width=".7"/>${glow}<path d="M0 -110 L-8 -80 L8 -80Z" fill="${a.au}"/></g><path d="M0 -112 L-8 -80 L0 -84 L8 -80Z" fill="${M}" stroke="${ol}" stroke-width=".8"/><path d="M-6 -78 L6 -78 L4 -72 L-4 -72Z" fill="${a.tr}" stroke="${ol}" stroke-width=".6"/><path d="M0 -72 Q-6 -62 -4 -54 M0 -72 Q6 -62 4 -54" stroke="${a.tr}" stroke-width="1.6" fill="none"/>`;
+      case 'orb':
+        return `${glow}<circle cx="0" cy="-34" r="20" fill="${a.au}"/></g><circle cx="0" cy="-34" r="15" fill="url(#orbg)" stroke="${dark(a.au, 0.5)}" stroke-width=".8"/><circle cx="-5" cy="-40" r="4.5" fill="#fff" opacity=".8"/><ellipse cx="0" cy="-34" rx="24" ry="7" fill="none" stroke="${a.au}" stroke-width="1.2" opacity=".75" transform="rotate(-24 0 -34)"/><ellipse cx="0" cy="-34" rx="21" ry="6" fill="none" stroke="#fff" stroke-width=".6" opacity=".6" transform="rotate(32 0 -34)"/>`;
+      case 'hammer':
+        return `<rect x="-2.4" y="-62" width="4.8" height="82" rx="2" fill="url(#wood)" stroke="${ol}" stroke-width=".7"/><rect x="-18" y="-80" width="36" height="24" rx="4" fill="url(#metal)" stroke="${ol}" stroke-width=".9"/><rect x="-18" y="-71" width="36" height="5" fill="${a.tr}" stroke="${ol}" stroke-width=".5"/><path d="M-14 -77 L14 -77" stroke="#fff" stroke-width=".8" opacity=".7"/>${glow}<rect x="-18" y="-80" width="36" height="24" rx="4" fill="${a.au}" opacity=".35"/></g>`;
+    }
+    return '';
+  }
+
+  function arm(sx, sy, ex, ey, hx, hy, t, skin, tr) {
+    const ol = dark(t, 0.62);
+    return `<path d="M${sx} ${sy} Q${ex} ${ey - 4} ${(ex + hx) / 2} ${(ey + hy) / 2}" stroke="${ol}" stroke-width="10.6" fill="none" stroke-linecap="round"/><path d="M${sx} ${sy} Q${ex} ${ey - 4} ${(ex + hx) / 2} ${(ey + hy) / 2}" stroke="url(#cl)" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M${(ex + hx) / 2} ${(ey + hy) / 2} L${hx} ${hy - 4}" stroke="${dark(skin, 0.4)}" stroke-width="7.2" fill="none" stroke-linecap="round"/><path d="M${(ex + hx) / 2} ${(ey + hy) / 2} L${hx} ${hy - 4}" stroke="url(#skg)" stroke-width="5.8" fill="none" stroke-linecap="round"/><path d="M${hx - 4} ${hy - 12} L${hx + 4} ${hy - 12}" stroke="${tr}" stroke-width="3.2" stroke-linecap="round"/>`;
+  }
+
+  function figure(def, o) {
+    const a = def.art;
+    const skin = a.s || '#ffe3cf';
+    const girl = SKIRT.includes(a.st);
+    const hr = hair(a.st, a.h, a.h2);
+    const R = def.rarity;
+    const rk = ['rare', 'epic', 'legendary', 'mythic', 'secret'].indexOf(R);
+    const hi = dark(a.h2, 0.55);
+    let s = '';
+    if (a.cape) s += `<path d="M58 62 Q80 56 102 62 L120 150 Q80 176 40 150Z" fill="url(#cape)" stroke="${dark(a.cape, 0.6)}" stroke-width=".8"/><path d="M62 70 Q58 110 50 146 M98 70 Q102 110 110 146" stroke="${dark(a.cape, 0.4)}" stroke-width=".8" fill="none" opacity=".6"/>`;
+    s += hr.back;
+    if (a.acc === 'hood') s += `<path d="M60 36 Q56 4 80 3 Q104 4 100 36 L98 56 Q80 46 62 56Z" fill="url(#cl)" stroke="${dark(a.t, 0.6)}" stroke-width=".8"/>`;
+    s += `<g>`;
+    if (girl) {
+      s += `<path d="M69 112 L75 112 L75.5 160 L74.6 184 L67.4 184 L67.6 160Z" fill="url(#skg)" stroke="${dark(skin, 0.4)}" stroke-width=".6"/><path d="M85 112 L91 112 L92.4 160 L92.6 184 L85.4 184 L84.5 160Z" fill="url(#skg)" stroke="${dark(skin, 0.4)}" stroke-width=".6"/>`;
+      s += `<path d="M68.6 138 L75.6 138 L74.8 184 L67.4 184Z" fill="${a.b}" stroke="${dark(a.b, 0.5)}" stroke-width=".6"/><path d="M84.4 138 L91.4 138 L92.6 184 L85.2 184Z" fill="${a.b}" stroke="${dark(a.b, 0.5)}" stroke-width=".6"/><path d="M68.4 140 L75.8 140 M84.2 140 L91.6 140" stroke="${a.tr}" stroke-width="1.4"/>`;
+    } else {
+      s += `<path d="M65 108 L79 108 L77 150 L75 186 L66 186 L67 150Z" fill="url(#pt)" stroke="${dark(a.b, 0.55)}" stroke-width=".7"/><path d="M81 108 L95 108 L93 150 L94 186 L85 186 L83 150Z" fill="url(#pt)" stroke="${dark(a.b, 0.55)}" stroke-width=".7"/><path d="M78 110 L77 150 M82 110 L83 150" stroke="${dark(a.b, 0.5)}" stroke-width=".6" opacity=".6"/>`;
+    }
+    s += `<path d="M64 172 L76 172 L77 184 Q77 190 70 190 L63 190 Q61 188 64 184Z" fill="url(#bt)" stroke="#120d22" stroke-width=".8"/><path d="M96 172 L84 172 L83 184 Q83 190 90 190 L97 190 Q99 188 96 184Z" fill="url(#bt)" stroke="#120d22" stroke-width=".8"/><path d="M64 175 L76 175 M84 175 L96 175" stroke="${a.tr}" stroke-width="1.6"/>`;
+    s += arm(59, 63, 51, 84, 54, 106, a.t, skin, a.tr);
+    s += `<path d="M58 62 Q80 56 102 62 L98 100 Q80 106 62 100Z" fill="url(#cl)" stroke="${dark(a.t, 0.6)}" stroke-width=".9"/>`;
+    if (girl) {
+      s += `<path d="M63 98 Q80 104 97 98 L104 126 Q80 134 56 126Z" fill="url(#sk)" stroke="${dark(a.b, 0.55)}" stroke-width=".9"/><path d="M62 104 L58 126 M70 104 L67 129 M80 106 L80 131 M90 104 L93 129 M98 104 L102 126" stroke="${dark(a.b, 0.45)}" stroke-width=".6" opacity=".7"/><path d="M56 126 Q80 134 104 126" stroke="${a.tr}" stroke-width="2" fill="none"/>`;
+    } else {
+      s += `<path d="M64 96 Q80 102 96 96 L98 112 Q80 118 62 112Z" fill="url(#pt)" stroke="${dark(a.b, 0.55)}" stroke-width=".9"/>`;
+    }
+    s += `<path d="M63 94 Q80 100 97 94 L97 99 Q80 105 63 99Z" fill="${a.tr}" stroke="${dark(a.tr, 0.5)}" stroke-width=".7"/><rect x="76" y="94" width="8" height="8" rx="1.5" fill="url(#gold)" stroke="#6b4a00" stroke-width=".7"/><circle cx="80" cy="98" r="2" fill="${a.au}" filter="url(#glow)"/>`;
+    s += `<path d="M62 66 Q80 76 98 66" stroke="${a.tr}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M80 70 L80 94" stroke="${dark(a.t, 0.45)}" stroke-width=".9"/><path d="M72 76 Q80 84 88 76" stroke="${dark(a.t, 0.4)}" stroke-width=".8" fill="none" opacity=".6"/>`;
+    s += `<circle cx="80" cy="80" r="3.4" fill="${a.au}" filter="url(#glow)" opacity=".9"/><circle cx="80" cy="80" r="2" fill="#fff" opacity=".9"/>`;
+    s += `<path d="M98 62 L102 100 Q92 104 94 80Z" fill="#000" opacity=".16"/><path d="M58 62 L56 98 L60 100 L60 64Z" fill="#fff" opacity=".18"/>`;
+    if (rk >= 1) {
+      s += `<g><path d="M54 62 Q58 52 70 58 Q66 68 56 70Z" fill="url(#metal)" stroke="#1b1530" stroke-width=".8"/><path d="M106 62 Q102 52 90 58 Q94 68 104 70Z" fill="url(#metal)" stroke="#1b1530" stroke-width=".8"/><path d="M55 64 Q59 56 67 60" stroke="${a.tr}" stroke-width="1.4" fill="none"/><path d="M105 64 Q101 56 93 60" stroke="${a.tr}" stroke-width="1.4" fill="none"/><circle cx="60" cy="62" r="1.6" fill="${a.au}"/><circle cx="100" cy="62" r="1.6" fill="${a.au}"/></g>`;
+    } else {
+      s += `<path d="M54 62 Q58 55 68 59 Q64 66 56 68Z" fill="url(#metal)" stroke="#1b1530" stroke-width=".7"/>`;
+    }
+    if (rk >= 2) s += `<path d="M62 62 L80 58 L98 62" stroke="url(#gold)" stroke-width="1.4" fill="none"/>`;
+    s += `<rect x="75" y="42" width="10" height="20" rx="3" fill="url(#skg)" stroke="${dark(skin, 0.4)}" stroke-width=".6"/><path d="M75 52 Q80 58 85 52 L85 56 Q80 62 75 56Z" fill="#000" opacity=".16"/>`;
+    const wx = 113,
+      wy = 105;
+    if (a.w === 'fists') {
+      s += arm(101, 63, 109, 84, wx, wy, a.t, skin, a.tr);
+      [[54, 107], [wx, wy + 1]].forEach((p) => {
+        s += `<g transform="translate(${p[0]} ${p[1]})"><circle r="8.4" fill="url(#metal)" stroke="#1b1530" stroke-width=".9"/><path d="M-6 -2 H6 M-6 2 H6" stroke="#1b1530" stroke-width=".6"/><path d="M-6 -6 Q0 -9 6 -6" stroke="${a.tr}" stroke-width="2" fill="none"/><circle r="9.5" fill="none" stroke="${a.au}" stroke-width="1" opacity=".7" filter="url(#glow)"/></g>`;
+      });
+    } else {
+      s += `<g transform="translate(${wx} ${wy}) rotate(${a.w === 'cannon' ? -6 : a.w === 'bow' ? 0 : -9})">${weapon(a.w, a)}</g>`;
+      s += arm(101, 63, 109, 84, wx, wy, a.t, skin, a.tr);
+      s += `<circle cx="${wx}" cy="${wy - 1}" r="4.4" fill="url(#skg)" stroke="${dark(skin, 0.45)}" stroke-width=".7"/>`;
+      s += `<circle cx="54" cy="107" r="4.2" fill="url(#skg)" stroke="${dark(skin, 0.45)}" stroke-width=".7"/>`;
+    }
+    s += `</g>`;
+    if (a.acc === 'hood') s += '';
+    s += `<ellipse cx="68.4" cy="31" rx="2" ry="3.4" fill="${skin}" stroke="${dark(skin, 0.4)}" stroke-width=".6"/><ellipse cx="91.6" cy="31" rx="2" ry="3.4" fill="${skin}" stroke="${dark(skin, 0.4)}" stroke-width=".6"/>`;
+    s += `<path d="M68 28 Q68 15 80 14 Q92 15 92 28 Q92 38 86.5 43 Q80 48 73.5 43 Q68 38 68 28Z" fill="url(#fc)" stroke="${dark(skin, 0.45)}" stroke-width=".8"/>`;
+    s += `<path d="M92 28 Q92 38 86.5 43 Q84 45 82 46 Q88 40 89 28Z" fill="#b06a5e" opacity=".28"/>`;
+    s += `<path d="M69 24 Q80 20 91 24 L91 18 Q80 12 69 18Z" fill="#000" opacity=".12"/>`;
+    s += `<ellipse cx="72.5" cy="36" rx="3.4" ry="1.9" fill="#ff7a9a" opacity=".32"/><ellipse cx="87.5" cy="36" rx="3.4" ry="1.9" fill="#ff7a9a" opacity=".32"/>`;
+    [[74, 1], [86, -1]].forEach((p, i) => {
+      const cx = p[0],
+        d = p[1],
+        cy = 30,
+        id = 'ey' + i;
+      s += `<clipPath id="${id}"><path d="M${cx - 5.4} ${cy + 0.2} Q${cx} ${cy - 4.6} ${cx + 5.4} ${cy + 0.2} Q${cx} ${cy + 4} ${cx - 5.4} ${cy + 0.2}Z"/></clipPath>`;
+      s += `<path d="M${cx - 5.4} ${cy + 0.2} Q${cx} ${cy - 4.6} ${cx + 5.4} ${cy + 0.2} Q${cx} ${cy + 4} ${cx - 5.4} ${cy + 0.2}Z" fill="#fff"/>`;
+      s += `<g clip-path="url(#${id})"><ellipse cx="${cx + d * 0.2}" cy="${cy}" rx="3.7" ry="4.6" fill="url(#iris)"/><ellipse cx="${cx + d * 0.2}" cy="${cy + 0.4}" rx="1.6" ry="2.4" fill="#150f24"/><path d="M${cx - 5.4} ${cy - 1} Q${cx} ${cy - 5.4} ${cx + 5.4} ${cy - 1} L${cx + 5.4} ${cy - 3} L${cx - 5.4} ${cy - 3}Z" fill="#000" opacity=".28"/></g>`;
+      s += `<circle cx="${cx - 1.4}" cy="${cy - 1.6}" r="1.3" fill="#fff"/><circle cx="${cx + 1.4}" cy="${cy + 1.2}" r=".55" fill="#fff" opacity=".9"/>`;
+      s += `<path d="M${cx - d * 5.8} ${cy + 0.4} Q${cx} ${cy - 5.4} ${cx + d * 5.8} ${cy - 0.2} L${cx + d * 6.6} ${cy - 1.2}" stroke="#1a1228" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      s += `<path d="M${cx - 4.6} ${cy - 7.6} Q${cx} ${cy - 9.4} ${cx + 4.6} ${cy - 7.8}" stroke="${hi}" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".75"/>`;
+    });
+    s += `<path d="M79.4 36 Q80.6 37.6 80 38" stroke="${dark(skin, 0.4)}" stroke-width=".6" fill="none" opacity=".7"/>`;
+    s += `<path d="M77.4 40.4 Q80 42 82.6 40.4" stroke="#8d3a3a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M78.4 41.2 Q80 42.4 81.6 41.2" stroke="#d96a6a" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".8"/>`;
+    s += hr.front;
+    s += acc(a.acc, a);
+    if (R === 'secret') s += `<path d="M69 30 L65 33 M91 30 L95 33" stroke="${a.au}" stroke-width=".9" opacity=".8" filter="url(#glow)"/>`;
+    return s;
+  }
+
+  function defsSvg(def, o) {
+    const a = def.art;
+    const skin = a.s || '#ffe3cf';
+    const shade = mix(skin, '#b86f6a', 0.32);
+    const wing = (id, c1, c2) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
+    return `<defs>${wing('hg', lite(a.h, 0.18), dark(a.h2, 0.12))}${wing('cl', lite(a.t, 0.16), dark(a.t, 0.38))}${wing('sk', lite(a.b, 0.1), dark(a.b, 0.42))}${wing('pt', lite(a.b, 0.12), dark(a.b, 0.45))}${wing('bt', mix(a.b, '#1b1530', 0.55), '#0e0a1c')}${wing('skg', lite(skin, 0.08), shade)}
+      <radialGradient id="fc" cx=".42" cy=".38" r=".75"><stop offset="0" stop-color="${lite(skin, 0.18)}"/><stop offset=".6" stop-color="${skin}"/><stop offset="1" stop-color="${shade}"/></radialGradient>
+      <radialGradient id="iris" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="${lite(a.e, 0.55)}"/><stop offset=".55" stop-color="${a.e}"/><stop offset="1" stop-color="${dark(a.e, 0.62)}"/></radialGradient>
+      <radialGradient id="orbg" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="${lite(a.au, 0.4)}"/><stop offset="1" stop-color="${dark(a.au, 0.35)}"/></radialGradient>
+      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4f9ff"/><stop offset=".45" stop-color="#a7b8d0"/><stop offset="1" stop-color="#5b6b84"/></linearGradient>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1a8"/><stop offset=".5" stop-color="#e8b43a"/><stop offset="1" stop-color="#a26b0d"/></linearGradient>
+      <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b98550"/><stop offset="1" stop-color="#5a3a1e"/></linearGradient>
+      <linearGradient id="ivory" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe8"/><stop offset="1" stop-color="#d4c08a"/></linearGradient>
+      <linearGradient id="fanc" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${dark(a.tr, 0.2)}"/><stop offset="1" stop-color="${lite(a.tr, 0.35)}"/></linearGradient>
+      <linearGradient id="cape" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lite(a.cape || '#000', 0.12)}"/><stop offset="1" stop-color="${dark(a.cape || '#000', 0.55)}"/></linearGradient>
+      <radialGradient id="au" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${a.au}" stop-opacity=".75"/><stop offset=".6" stop-color="${a.au}" stop-opacity=".18"/><stop offset="1" stop-color="${a.au}" stop-opacity="0"/></radialGradient>
+      <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+      ${o.defsExtra || ''}</defs>`;
+  }
+
+  function background(def, o, vb) {
+    const a = def.art;
+    const R = ATD.RARITY[def.rarity];
+    const E = ATD.ELEMENTS[def.el] || { color: a.au, glow: a.au };
+    const [x, y, w, h] = vb;
+    const cx = 80,
+      cy = 34;
+    const rnd = ATD.util.mulberry32(def.id.split('').reduce((q, c) => q + c.charCodeAt(0) * 31, 7));
+    let s = `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(R.grad[0], E.glow, 0.3)}"/><stop offset=".55" stop-color="${mix(R.grad[1], E.glow, 0.15)}"/><stop offset="1" stop-color="${dark(R.grad[1], 0.5)}"/></linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${lite(E.color, 0.5)}" stop-opacity=".95"/><stop offset=".4" stop-color="${E.color}" stop-opacity=".45"/><stop offset="1" stop-color="${E.glow}" stop-opacity="0"/></radialGradient>
+    <radialGradient id="vg" cx=".5" cy=".42" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lite(E.color, 0.6)}" stop-opacity=".5"/><stop offset="1" stop-color="${E.color}" stop-opacity="0"/></linearGradient></defs>`;
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#bg)"/>`;
+    for (let i = 0; i < 9; i++) {
+      const ang = -1.5 + i * 0.38 + (rnd() - 0.5) * 0.1;
+      s += `<path d="M${cx} ${cy} L${cx + Math.cos(ang - 0.07) * 160} ${cy + Math.sin(ang - 0.07) * 160 + 40} L${cx + Math.cos(ang + 0.07) * 160} ${cy + Math.sin(ang + 0.07) * 160 + 40}Z" fill="url(#ray)" opacity="${0.22 + rnd() * 0.18}"/>`;
+    }
+    s += `<ellipse cx="${cx}" cy="${cy + 4}" rx="58" ry="58" fill="url(#halo)"/>`;
+    s += `<circle cx="${cx}" cy="${cy + 4}" r="40" fill="none" stroke="${lite(E.color, 0.4)}" stroke-width=".7" opacity=".55"/><circle cx="${cx}" cy="${cy + 4}" r="48" fill="none" stroke="${E.color}" stroke-width=".5" stroke-dasharray="2 3" opacity=".6"/>`;
+    if (['mythic', 'secret', 'legendary'].includes(def.rarity)) {
+      let t = '';
+      for (let i = 0; i < 12; i++) {
+        const an = (i / 12) * 6.2832;
+        t += `<path d="M${cx + Math.cos(an) * 54} ${cy + 4 + Math.sin(an) * 54} L${cx + Math.cos(an + 0.2) * 62} ${cy + 4 + Math.sin(an + 0.2) * 62}" stroke="${R.color}" stroke-width="1.2" opacity=".8"/>`;
+      }
+      s += t;
+    }
+    s += `<path d="M${x} ${y + h * 0.78} Q${x + w * 0.3} ${y + h * 0.66} ${x + w * 0.55} ${y + h * 0.76} T${x + w} ${y + h * 0.7} L${x + w} ${y + h} L${x} ${y + h}Z" fill="${dark(R.grad[1], 0.45)}" opacity=".75"/>`;
+    s += `<path d="M${x} ${y + h * 0.86} Q${x + w * 0.4} ${y + h * 0.78} ${x + w} ${y + h * 0.88} L${x + w} ${y + h} L${x} ${y + h}Z" fill="${dark(R.grad[1], 0.7)}" opacity=".8"/>`;
+    for (let i = 0; i < 26; i++) {
+      const px = x + rnd() * w,
+        py = y + rnd() * h * 0.9,
+        r = 0.4 + rnd() * 1.4;
+      s += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r.toFixed(1)}" fill="${i % 3 ? '#fff' : E.color}" opacity="${(0.25 + rnd() * 0.55).toFixed(2)}"/>`;
+    }
+    s += `<ellipse cx="${cx}" cy="${y + h + 2}" rx="${w * 0.7}" ry="18" fill="${E.color}" opacity=".25" filter="url(#soft)"/>`;
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#vg)"/>`;
+    s += `<rect x="${x + 1.5}" y="${y + 1.5}" width="${w - 3}" height="${h - 3}" fill="none" stroke="${R.color}" stroke-width=".8" opacity=".7"/>`;
+    if (['legendary', 'mythic', 'secret', 'epic'].includes(def.rarity)) {
+      [[x + 1.5, y + 1.5, 1, 1], [x + w - 1.5, y + 1.5, -1, 1], [x + 1.5, y + h - 1.5, 1, -1], [x + w - 1.5, y + h - 1.5, -1, -1]].forEach((c) => {
+        s += `<path d="M${c[0]} ${c[1] + c[3] * 14} L${c[0]} ${c[1]} L${c[0] + c[2] * 14} ${c[1]}" fill="none" stroke="${R.color}" stroke-width="1.8"/>`;
+      });
+    }
+    return s;
+  }
+
+  function unitSVG(def, o) {
+    o = o || {};
+    const a = def.art;
+    const bust = !!o.bg;
+    const vb = bust ? [26, 2, 108, 135] : [0, 0, 160, 200];
+    let s = defsSvg(def, o);
+    if (bust) s += background(def, o, vb);
+    else s += `<ellipse cx="80" cy="190" rx="34" ry="6" fill="#000" opacity=".4"/><circle cx="80" cy="100" r="${o.evo ? 84 : 66}" fill="url(#au)"/>`;
+    if (bust) s += `<circle cx="80" cy="60" r="70" fill="url(#au)" opacity=".7"/>`;
+    if (o.evo) {
+      const R = ATD.RARITY[def.rarity];
+      s += `<g opacity=".8" filter="url(#glow)"><path d="M58 70 Q20 40 8 84 Q34 76 52 100Z" fill="${R.color}" opacity=".55"/><path d="M102 70 Q140 40 152 84 Q126 76 108 100Z" fill="${R.color}" opacity=".55"/></g>`;
+    }
+    s += figure(def, o);
+    s += `<g opacity=".55" pointer-events="none"><path d="M57 62 Q58 90 62 100" stroke="${lite(a.au, 0.6)}" stroke-width="1" fill="none"/></g>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.join(' ')}" width="${o.w || 160}" height="${o.h || 200}">${s}</svg>`;
+  }
+  A.unitSVG = unitSVG;
 })();
 </script>
 <script>(function () {
