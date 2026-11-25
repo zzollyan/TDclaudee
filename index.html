@@ -425,7 +425,7 @@ table.log tfoot td{position:sticky;bottom:0;background:rgba(16,24,19,.94);backdr
 @media(max-width:900px){.crow.r1{grid-template-columns:1fr 1fr}.crow.r1>.f:last-child{grid-column:1/-1;margin-top:8px}}
 @media(max-width:720px){.crow.r1{grid-template-columns:1fr;row-gap:24px;margin-bottom:28px}.crow.r1>.f:last-child{margin-top:0}.crow.r2{grid-template-columns:repeat(2,minmax(0,1fr))}.crow.r2>.f:last-child{grid-column:1/-1}}
 
-.crow.l1{grid-template-columns:1.2fr 1fr 1.2fr;margin-bottom:26px}
+.crow.l1{grid-template-columns:1.2fr 1fr;margin-bottom:26px}.f.quick{margin-bottom:30px}#quick{min-height:44px;max-height:140px;resize:none;overflow:auto}
 .crow.l2{grid-template-columns:1fr 90px 1.25fr 1.2fr auto}.cstat{grid-template-columns:.6fr .6fr 1.4fr 1fr}.cnote{margin-top:2px}
 .crow.l2 .btn{height:42px;padding:0 28px}
 .chips.items{margin-top:24px}
@@ -438,8 +438,8 @@ table.log tfoot td{position:sticky;bottom:0;background:rgba(16,24,19,.94);backdr
 .stat.neg b{color:var(--red)}
 .hist .hrow{cursor:pointer}
 @media(max-width:1280px){.crow.l2{grid-template-columns:1fr 90px 1.25fr 1.2fr}.crow.l2 .btn{grid-column:1/-1}}
-@media(max-width:900px){.crow.l1{grid-template-columns:1fr 1fr}.crow.l1>.f:last-child{grid-column:1/-1}}
-@media(max-width:720px){.crow.l1{grid-template-columns:1fr;row-gap:26px}.crow.l1>.f:last-child{grid-column:auto}.crow.l2{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:26px}.crow.l2>.f:nth-child(4){grid-column:1/-1}}
+
+@media(max-width:720px){.crow.l1{grid-template-columns:1fr;row-gap:26px}.crow.l2{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:26px}.crow.l2>.f:nth-child(4){grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -467,10 +467,10 @@ table.log tfoot td{position:sticky;bottom:0;background:rgba(16,24,19,.94);backdr
    <div class="card stat"><div class="sh"><i class="ico" data-i="users"></i></div><small>KHÁCH HÀNG</small><b id="k4">0</b><em id="k4s"></em></div>
   </div>
   <section class="card composer">
+   <div class="f quick"><label>Thêm nhanh · mỗi dòng 1 đơn: link, Robux, tiền, món, xSL</label><textarea id="quick" rows="1" placeholder="facebook.com/abc 1000 250k VIP Pass x2"></textarea><span class="hintline" id="quickHint"></span></div>
    <div class="crow l1">
-    <div class="f"><label>Khách hàng · dán link Facebook / SĐT / tên</label><input id="contact" list="custList" autocomplete="off" placeholder="facebook.com/..."></div>
-    <div class="f"><label>Tên khách (tự động)</label><input id="name" autocomplete="off" placeholder="Tự lấy từ link"><span class="hintline" id="nameHint"></span></div>
-    <div class="f"><label>Khách mua gì</label><input id="item" list="itemList" autocomplete="off" placeholder="Tên món hoặc link Game Pass"><span class="hintline" id="itemHint"></span></div>
+    <div class="f"><label>Khách hàng · link Facebook / SĐT</label><input id="contact" list="custList" autocomplete="off" placeholder="facebook.com/... hoặc SĐT (không bắt buộc)"><span class="hintline" id="nameHint"></span></div>
+        <div class="f"><label>Khách mua gì</label><input id="item" list="itemList" autocomplete="off" placeholder="Tên món hoặc link Game Pass"><span class="hintline" id="itemHint"></span></div>
    </div>
    <div class="crow l2">
     <div class="f"><label>Robux</label><input id="robux" inputmode="decimal" autocomplete="off" placeholder="1000 hoặc 1k"></div>
@@ -550,7 +550,7 @@ const ago=t=>{const d=Math.floor((sod(Date.now())-sod(t))/864e5);return d<=0?'H�
 const ckey=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'');
 const ini=n=>{const w=String(n||'?').trim().split(/\s+/);return ((w.length>1?w[0][0]+w[w.length-1][0]:w[0].slice(0,2))||'?').toUpperCase()};
 const hue=n=>{let h=0;for(const c of String(n))h=(h*31+c.charCodeAt(0))%360;return h};
-const av=(n,c='')=>`<i class="av ${c}" style="background:linear-gradient(135deg,hsl(${hue(n)} 60% 48%),hsl(${(hue(n)+40)%360} 55% 32%))">${esc(ini(n))}</i>`;
+const av=(n,c='',k)=>`<i class="av ${c}" style="background:linear-gradient(135deg,hsl(${hue(k||n)} 60% 48%),hsl(${(hue(k||n)+40)%360} 55% 32%))">${esc(ini(n))}</i>`;
 const IC={
  sales:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.3c2 .8 3.5 2.6 3.5 5.7"/>',
@@ -562,8 +562,8 @@ const IC={
 const ic=n=>`<svg class="i" viewBox="0 0 24 24">${IC[n]||''}</svg>`;
 
 const KEY='robux_lean',CACHE='robux_lean_fbnames';
-function blank(){return {rate:25000,deposits:[],orders:[],names:{}}}
-function norm(j){const s=blank();s.rate=Number(j.rate)||25000;s.deposits=Array.isArray(j.deposits)?j.deposits:[];s.orders=Array.isArray(j.orders)?j.orders:[];s.names=j.names&&typeof j.names==='object'?j.names:{};return s}
+function blank(){return {v:2,rate:25000,deposits:[],orders:[],names:{}}}
+function norm(j){const s=blank();s.rate=Number(j.rate)||25000;s.deposits=Array.isArray(j.deposits)?j.deposits:[];s.orders=Array.isArray(j.orders)?j.orders:[];s.names=j.v>=2&&j.names&&typeof j.names==='object'?j.names:{};return s}
 function tms(v){if(typeof v==='number')return v;const d=new Date(v);return isNaN(d)?Date.now():d.getTime()}
 function migrate(o){
  const s=blank();
@@ -577,7 +577,6 @@ function migrate(o){
   const p=contact?parseContact(contact):null;
   const key=p?p.key:'name:'+(ckey(name)||uid());
   s.orders.push({id:x.id||uid(),t:tms(x.t||x.date||x.createdAt||x.ts||Date.now()),key,name,contact:p?contact:'',item:String(x.product||x.item||'').trim(),robux:Number(x.robux||x.gp)||0,amount,note:String(x.note||'')});
-  s.names[key]=name;
  });
  return s;
 }
@@ -744,7 +743,7 @@ function customers(){
   if(o.t>=c.last){c.last=o.t;c.name=o.name}
   if(o.contact)c.contact=o.contact;
  }
- return Object.values(m).map(c=>{c.name=S.names[c.key]||c.name||'Khách';c.orders.sort((a,b)=>b.t-a.t);return c});
+ return Object.values(m).map(c=>{c.name=S.names[c.key]||'Anonymous';c.orders.sort((a,b)=>b.t-a.t);return c});
 }
 function totals(){
  const cost=S.deposits.reduce((a,d)=>a+(d.cost||0),0),rbIn=S.deposits.reduce((a,d)=>a+(d.robux||0),0);
@@ -784,7 +783,7 @@ function renderKPIs(){
 }
 function renderLists(){
  const cs=customers().sort((a,b)=>b.last-a.last);
- $('custList').innerHTML=cs.slice(0,200).map(c=>`<option value="${esc(c.name)}">`).join('');
+ $('custList').innerHTML=cs.filter(c=>c.contact).slice(0,200).map(c=>`<option value="${esc(c.contact)}">`).join('');
  const it={};S.orders.forEach(o=>{if(o.item){const k=o.item.toLowerCase();(it[k]||(it[k]={n:0,name:o.item})).n++}});
  const top=Object.values(it).sort((a,b)=>b.n-a.n);
  $('itemList').innerHTML=top.slice(0,200).map(x=>`<option value="${esc(x.name)}">`).join('');
@@ -809,8 +808,8 @@ function renderLog(){
  for(const o of list){
   const d=dmy(o.t);
   if(d!==cur){cur=d;const x=byDay[d];html+=`<tr class="day"><td colspan="7"><b>${d===dmy(Date.now())?'Hôm nay · '+d:d}</b><span>${x.n} đơn</span><span>${x.q} SP</span><span>${fmt(x.r)} R$</span><span class="l">${money(x.m)}</span></td></tr>`}
-  const nm=S.names[o.key]||o.name;
-  html+=`<tr data-act="ord-edit" data-id="${esc(o.id)}"><td class="mut">${hm(o.t)}</td><td><span class="clink" data-act="cust-open" data-key="${esc(o.key)}">${av(nm,'sm')}<span style="display:block;min-width:0"><span class="cn pn">${esc(nm)}</span>${o.contact?`<div class="mut" style="display:block;max-width:190px;overflow:hidden;text-overflow:ellipsis;font-size:10.5px">${linkHtml(o.contact)}</div>`:''}</span></span></td><td>${o.item?`<span class="pn">${esc(o.item)}</span>`:'<span class="mut">—</span>'}</td><td class="num">${o.qty||1}</td><td class="num">${o.robux?fmt(o.robux):'—'}</td><td class="num l">${money(o.amount)}</td><td class="mut"><span class="pn">${esc(o.note)}</span></td></tr>`;
+  const nm=(S.names[o.key]||'Anonymous');
+  html+=`<tr data-act="ord-edit" data-id="${esc(o.id)}"><td class="mut">${hm(o.t)}</td><td><span class="clink" data-act="cust-open" data-key="${esc(o.key)}">${av(nm,'sm',o.key)}<span style="display:block;min-width:0"><span class="cn pn">${esc(nm)}</span>${o.contact?`<div class="mut" style="display:block;max-width:190px;overflow:hidden;text-overflow:ellipsis;font-size:10.5px">${linkHtml(o.contact)}</div>`:''}</span></span></td><td>${o.item?`<span class="pn">${esc(o.item)}</span>`:'<span class="mut">—</span>'}</td><td class="num">${o.qty||1}</td><td class="num">${o.robux?fmt(o.robux):'—'}</td><td class="num l">${money(o.amount)}</td><td class="mut"><span class="pn">${esc(o.note)}</span></td></tr>`;
  }
  $('orderTable').innerHTML=html;
  const tr=list.reduce((s,o)=>s+(o.robux||0),0),tm=list.reduce((s,o)=>s+(o.amount||0),0),tq=list.reduce((s,o)=>s+(o.qty||1),0);
@@ -827,7 +826,7 @@ function renderCustomers(){
  let list=all.filter(c=>!q||c.name.toLowerCase().includes(q)||ckey(c.name).includes(ckey(q))||(c.contact||'').toLowerCase().includes(q));
  list.sort((a,b)=>ui.csort==='last'?b.last-a.last:ui.csort==='n'?b.n-a.n:b.paid-a.paid);
  if(!list.length){$('cGrid').innerHTML='<div class="card empty" style="grid-column:1/-1">Chưa có khách nào.</div>';return}
- $('cGrid').innerHTML=list.map((c,i)=>{const its=itemsOf(c);return `<div class="card ccard" style="--i:${Math.min(i,14)}" data-act="cust-open" data-key="${esc(c.key)}"><div class="chead">${av(c.name)}<div class="cmeta"><div class="cname">${esc(c.name)}</div><div class="csub">${c.contact?linkHtml(c.contact):'Khách ghi tay'} · ${ago(c.last)}</div></div></div><div class="ctags">${c.n>=2?'<span class="tag back">Mua lại</span>':'<span class="tag new">Mới</span>'}</div><div class="cstat"><div><small>ĐƠN</small><b>${c.n}</b></div><div><small>SL</small><b>${c.qty}</b></div><div><small>TIỀN NHẬN</small><b class="l">${money(c.paid)}</b></div><div><small>ROBUX</small><b>${fmt(c.robux)}</b></div></div>${its.length?`<div class="cnote">${its.slice(0,4).map(x=>esc(x.n)+' ×'+x.q).join(' · ')}</div>`:''}</div>`}).join('');
+ $('cGrid').innerHTML=list.map((c,i)=>{const its=itemsOf(c);return `<div class="card ccard" style="--i:${Math.min(i,14)}" data-act="cust-open" data-key="${esc(c.key)}"><div class="chead">${av(c.name,'',c.key)}<div class="cmeta"><div class="cname">${esc(c.name)}</div><div class="csub">${c.contact?linkHtml(c.contact):'Khách ghi tay'} · ${ago(c.last)}</div></div></div><div class="ctags">${c.n>=2?'<span class="tag back">Mua lại</span>':'<span class="tag new">Mới</span>'}</div><div class="cstat"><div><small>ĐƠN</small><b>${c.n}</b></div><div><small>SL</small><b>${c.qty}</b></div><div><small>TIỀN NHẬN</small><b class="l">${money(c.paid)}</b></div><div><small>ROBUX</small><b>${fmt(c.robux)}</b></div></div>${its.length?`<div class="cnote">${its.slice(0,4).map(x=>esc(x.n)+' ×'+x.q).join(' · ')}</div>`:''}</div>`}).join('');
 }
 function renderCapital(){
  const t=totals();
@@ -904,48 +903,64 @@ function extractLink(raw){
  if(!m)return {link:'',rest:raw};
  return {link:m[0].replace(/[),.;]+$/,''),rest:(raw.slice(0,m.index)+' '+raw.slice(m.index+m[0].length)).replace(/\s+/g,' ').trim()};
 }
-async function detect(){
- const raw=$('contact').value.trim(),tok=++ui.tok;
- if(!raw){if(!ui.nameTouched)$('name').value='';setStat('');return}
- const ex=extractLink(raw);
- const p=resolve(ex.link||raw);
- const c=customers().find(x=>x.key===p.key);
- const known=S.names[p.key]||(c&&c.name);
- if(ex.link&&ex.rest&&!ui.nameTouched){$('name').value=ex.rest;setStat('Tên lấy từ nội dung bạn dán <b>✓</b>');return}
- if(known){if(!ui.nameTouched)$('name').value=known;setStat('Khách cũ · <b>'+(c?c.n:0)+' đơn</b>'+(c?' · '+money(c.paid):''));return}
- if(!ui.nameTouched)$('name').value=p.name||'';
- if(p.kind==='text'){setStat('Khách mới');return}
- if(p.kind!=='facebook'){setStat(p.name?'Tên đoán từ link':'Nhập tên khách',!p.name);return}
- const cached=nameCache()[p.key];
- if(cached){if(!ui.nameTouched)$('name').value=cached;setStat('Tên Facebook <b>✓</b>');return}
- setStat('Đang lấy tên từ Facebook…');
- const n=await fetchFbName(p);
- if(tok!==ui.tok)return;
- if(n){nameCacheSet(p.key,n);if(!ui.nameTouched)$('name').value=n;setStat('Đã lấy tên từ Facebook <b>✓</b>')}
- else{
-  setStat('Facebook chặn đọc tên — gõ tên vào ô này (hoặc dán “Tên + link”)',true);
-  if(!ui.nameTouched){const nm=$('name');if(p.name)nm.value=p.name;nm.focus();nm.select()}
- }
+function detect(){
+ const raw=$('contact').value.trim();
+ if(!raw){setStat('');return}
+ const ex=extractLink(raw),p=resolve(ex.link||raw),c=customers().find(x=>x.key===p.key);
+ setStat(c?'Khách cũ · <b>'+c.n+' đơn</b> · '+money(c.paid):'Khách mới');
 }
 function resetForm(){
- ['contact','name','item','robux','amount','note'].forEach(i=>$(i).value='');$('qty').value='1';
+ ['contact','item','robux','amount','note'].forEach(i=>$(i).value='');$('qty').value='1';
  ui.touched={};ui.nameTouched=false;ui.tok++;itemTok++;
  setStat('');$('itemHint').textContent='';hintAmt();
  $('contact').focus();
 }
+function mkOrder(raw,item,qty,robux,amount,note){
+ raw=String(raw||'').trim();
+ const ex=extractLink(raw),p=raw?resolve(ex.link||raw):null;
+ const isC=p&&['facebook','zalo','link','phone'].includes(p.kind);
+ const contact=isC?(ex.link||raw):(p&&p.kind==='known'?(p.contact||''):'');
+ return {id:uid(),t:Date.now(),key:p?p.key:'anon:'+uid(),name:'Anonymous',contact,item,qty,robux,amount,note};
+}
 function saveOrder(){
- const raw=$('contact').value.trim();let name=$('name').value.trim();
- if(!raw&&!name){toast('Nhập khách hàng',{err:1});$('contact').focus();return}
  const amount=Math.round(amtVnd());
  if(!(amount>0)){toast('Nhập số tiền nhận',{err:1});$('amount').focus();return}
- const ex=extractLink(raw);
- const p=resolve(ex.link||raw||name);
- const robux=num($('robux').value)||0,qty=Math.max(1,parseInt($('qty').value,10)||1);
- if(!name)name=ex.rest||p.name||(p.kind==='phone'?raw:'')||'Khách';
- const contact=p.kind==='known'?(p.contact||''):(p.kind==='text'?'':(ex.link||raw));
- const o={id:uid(),t:Date.now(),key:p.key,name,contact,item:$('item').value.trim(),qty,robux,amount,note:$('note').value.trim()};
- mutate(()=>{S.orders.push(o);S.names[p.key]=name},'Đã lưu · '+name+' · '+money(amount));
+ const o=mkOrder($('contact').value,$('item').value.trim(),Math.max(1,parseInt($('qty').value,10)||1),num($('robux').value)||0,amount,$('note').value.trim());
+ mutate(()=>S.orders.push(o),'Đã lưu đơn · '+money(amount));
  resetForm();
+}
+function parseLine(line){
+ const ex=extractLink(line);let rest=ex.rest,contact=ex.link;
+ if(!contact){const m=/(^|\s)(\+?\d[\d.\-]{7,12}\d)(?=\s|$)/.exec(rest);if(m&&/^\+?\d{9,12}$/.test(m[2].replace(/[.\-]/g,''))){contact=m[2];rest=rest.replace(m[2],' ')}}
+ let qty=1;
+ rest=rest.replace(/(\d)\s+(k|tr|rb|r\$|robux|đ|vnd)(?![a-zà-ỹ])/gi,'$1$2').replace(/(^|\s)(?:[x×](\d+)|(\d+)[x×])(?=\s|$)/i,(m,a,b,c)=>{qty=parseInt(b||c,10)||1;return ' '});
+ let rb=null,mo=null;const item=[],plain=[];
+ for(const w0 of rest.split(/\s+/).filter(Boolean)){
+  const w=w0.toLowerCase().replace(/[,;]+$/,'');
+  if(/^\d[\d.,]*(rb|r\$|robux)$/.test(w))rb=num(w.replace(/(rb|r\$|robux)$/,''));
+  else if(/^\d[\d.,]*(k|tr|triệu|nghìn|ngàn|củ|đ|₫|vnd)\d*$/.test(w))mo=num(w);
+  else if(/^\d[\d.,]*$/.test(w))plain.push(num(w));
+  else item.push(w0);
+ }
+ for(const v of plain){if(rb==null)rb=v;else if(mo==null)mo=v<10000?v*1000:v}
+ return {contact:contact||'',qty,robux:rb>0?rb:0,amount:mo>0?mo:0,item:item.join(' ')};
+}
+const parseLines=v=>String(v||'').split(/\n+/).map(x=>x.trim()).filter(Boolean).map(parseLine);
+function onQuick(){
+ const q=$('quick');q.style.height='auto';q.style.height=Math.min(140,q.scrollHeight)+'px';
+ const ls=parseLines(q.value),e=$('quickHint');
+ if(!ls.length){e.textContent='';e.className='hintline';return}
+ const ok=ls.filter(x=>x.amount>0);
+ e.className='hintline'+(ok.length<ls.length?' warn':'');
+ e.innerHTML=ok.length<ls.length?(ls.length-ok.length)+' dòng thiếu số tiền':'<b>'+ok.length+' đơn</b> · '+fmt(ok.reduce((a,x)=>a+x.robux,0))+' R$ · '+money(ok.reduce((a,x)=>a+x.amount,0));
+}
+function saveQuick(){
+ const ls=parseLines($('quick').value);if(!ls.length)return;
+ const bad=ls.filter(x=>!(x.amount>0));
+ if(bad.length){toast('Thiếu số tiền ở '+bad.length+' dòng',{err:1});return}
+ const os=ls.map(x=>mkOrder(x.contact,x.item,x.qty,x.robux,x.amount,''));
+ mutate(()=>os.forEach(o=>S.orders.push(o)),'Đã lưu '+os.length+' đơn');
+ $('quick').value='';onQuick();$('quick').focus();
 }
 const dt={};
 function onDQuick(){
@@ -969,7 +984,7 @@ const loc=t=>{const d=new Date(t-new Date(t).getTimezoneOffset()*6e4);return d.t
 function editOrder(id){
  const o=S.orders.find(x=>x.id===id);if(!o)return;
  openModal(`<div class="sheet-h"><b style="font-size:16px">Sửa đơn</b><button class="x" data-act="close">✕</button></div>
- <div class="mg"><div><small>KHÁCH</small><b>${esc(S.names[o.key]||o.name)}</b>${o.contact?`<div class="mut">${linkHtml(o.contact)}</div>`:''}</div><div><small>THỜI GIAN</small><input id="eT" type="datetime-local" value="${loc(o.t)}" style="margin-top:2px;padding:6px 8px"></div></div>
+ <div class="mg"><div><small>KHÁCH</small><b>${esc((S.names[o.key]||'Anonymous'))}</b>${o.contact?`<div class="mut">${linkHtml(o.contact)}</div>`:''}</div><div><small>THỜI GIAN</small><input id="eT" type="datetime-local" value="${loc(o.t)}" style="margin-top:2px;padding:6px 8px"></div></div>
  <div class="f"><label>Món</label><input id="eItem" value="${esc(o.item)}"></div>
  <div class="fg3"><div class="f"><label>Số lượng</label><input id="eQ" value="${o.qty||1}"></div><div class="f"><label>Robux</label><input id="eR" value="${o.robux||''}"></div><div class="f"><label>Tiền nhận (VND)</label><input id="eA" value="${o.amount}"></div></div>
  <div class="f"><label>Ghi chú</label><input id="eN" value="${esc(o.note)}"></div>
@@ -979,7 +994,7 @@ function openCust(key){
  const c=customers().find(x=>x.key===key);if(!c)return;
  const its=itemsOf(c);
  const rows=c.orders.map(o=>`<div class="hrow" data-act="ord-edit" data-id="${esc(o.id)}" style="grid-template-columns:.9fr 1.5fr .5fr 1fr 1fr"><span class="mut">${dmy(o.t)}</span><span class="pn">${esc(o.item)||'—'}</span><span>×${o.qty||1}</span><span>${o.robux?fmt(o.robux)+' R$':'—'}</span><b class="l">${money(o.amount)}</b></div>`).join('');
- openModal(`<div class="sheet-h"><div class="chd">${av(c.name,'lg')}<div style="min-width:0"><b style="font-size:17px">${esc(c.name)}</b><div class="mut">${c.contact?linkHtml(c.contact):'Khách ghi tay'}</div></div></div><button class="x" data-act="close">✕</button></div>
+ openModal(`<div class="sheet-h"><div class="chd">${av(c.name,'lg',c.key)}<div style="min-width:0"><b style="font-size:17px">${esc(c.name)}</b><div class="mut">${c.contact?linkHtml(c.contact):'Khách ghi tay'}</div></div></div><button class="x" data-act="close">✕</button></div>
  <div class="mg c4"><div><small>SỐ ĐƠN</small><b>${c.n}</b></div><div><small>SẢN PHẨM</small><b>${c.qty}</b></div><div><small>TIỀN NHẬN</small><b class="l">${money(c.paid)}</b></div><div><small>ROBUX</small><b>${fmt(c.robux)}</b></div></div>
  ${its.length?`<div class="cnote" style="margin-bottom:14px;-webkit-line-clamp:4">Đã mua: ${its.map(x=>esc(x.n)+' ×'+x.q).join(' · ')}</div>`:''}
  <div class="f"><label>Đổi tên khách</label><div class="inwrap"><input id="cName" value="${esc(c.name)}"><button class="btn ghost" data-act="cust-rename" data-key="${esc(c.key)}">Lưu tên</button></div></div>
@@ -988,7 +1003,7 @@ function openCust(key){
 }
 function sheets(){
  const t=totals(),os=S.orders.slice().sort((a,b)=>a.t-b.t),cs=customers().sort((a,b)=>b.paid-a.paid);
- const ords=[['Thời gian','Khách hàng','Link','Món','Số lượng','Robux','Tiền nhận','Ghi chú']].concat(os.map(o=>[dmy(o.t)+' '+hm(o.t),S.names[o.key]||o.name,o.contact||'',o.item||'',o.qty||1,o.robux||0,o.amount,o.note||'']));
+ const ords=[['Thời gian','Khách hàng','Link','Món','Số lượng','Robux','Tiền nhận','Ghi chú']].concat(os.map(o=>[dmy(o.t)+' '+hm(o.t),(S.names[o.key]||'Anonymous'),o.contact||'',o.item||'',o.qty||1,o.robux||0,o.amount,o.note||'']));
  ords.push(['Tổng','','','',t.qty,t.rbOut,t.rev,'']);
  const cus=[['Khách hàng','Link','Số đơn','Số lượng','Robux','Tiền nhận','Mua gần nhất']].concat(cs.map(c=>[c.name,c.contact||'',c.n,c.qty,c.robux,c.paid,dmy(c.last)]));
  const dep=[['Ngày','Robux nhập','Vốn']].concat(S.deposits.slice().sort((a,b)=>a.t-b.t).map(d=>[dmy(d.t)+' '+hm(d.t),d.robux||0,d.cost]));
@@ -1040,7 +1055,7 @@ document.addEventListener('click',e=>{
  else if(a==='cust-rename'){const n=$('cName').value.trim();if(!n)return;mutate(()=>{S.names[d.key]=n},'Đã đổi tên');openCust(d.key)}
  else if(a==='cust-new'){
   const c=customers().find(x=>x.key===d.key);closeModal();go('sales');
-  if(c){resetForm();$('contact').value=c.contact||c.name;detect();setTimeout(()=>$('item').focus(),50)}
+  if(c){resetForm();$('contact').value=c.contact||'';detect();setTimeout(()=>$('item').focus(),50)}
  }
  else if(a==='dep-add')addDep();
  else if(a==='dep-del')mutate(()=>{S.deposits=S.deposits.filter(x=>x.id!==d.id)},'Đã xóa lần nhập');
@@ -1066,7 +1081,8 @@ document.addEventListener('keydown',e=>{
  }
 });
 $('contact').addEventListener('input',onContact);
-$('name').addEventListener('input',()=>{ui.nameTouched=!!$('name').value.trim()});
+$('quick').addEventListener('input',onQuick);
+$('quick').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();saveQuick()}});
 $('item').addEventListener('input',onItem);
 $('robux').addEventListener('input',onRobux);
 $('amount').addEventListener('input',onAmount);
